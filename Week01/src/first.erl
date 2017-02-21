@@ -10,13 +10,19 @@
 -author("Rakkatakka").
 
 %% API
--export([double/1, mult/2, area/3]).
+-export([double/1, square/1, treble/1, mult/2, area/3]).
 
 mult(X, Y) ->
     X * Y.
 
 double(X) ->
     mult(2, X).
+
+square(X) ->
+    mult(X, X).
+
+treble(X) ->
+    mult(3, X).
 
 area(A, B, C) ->
     S = (A + B + C) / 2,
