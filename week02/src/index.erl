@@ -12,6 +12,11 @@
 -export([
     get_file_contents/1,
     show_file_contents/1,
+    process_text/1,
+    process_strings/1,
+    to_interval_list/1,
+    to_interval/1,
+    scan_lines/1,
     scan_line/2,
     transform_strings/1,
     split_string_into_words/1,
@@ -53,6 +58,64 @@ show_file_contents([L|Ls]) ->
     show_file_contents(Ls);
 show_file_contents([]) ->
     ok.
+
+process_text(FileName) ->
+    FileContent = get_file_contents(FileName),
+    process_strings(FileContent).
+
+process_strings(Strings) ->
+    Lines = transform_strings(Strings),
+    RawFileIndex = scan_lines(Lines),
+    process_raw_file_index(RawFileIndex).
+
+process_raw_file_index(FileIndex) ->
+    FileIndexList = maps:to_list(FileIndex),
+    MappedIndex = lists:map(
+        fun ({Word, LineSet}) ->
+            {Word, to_interval_list(LineSet)}
+        end,
+        FileIndexList),
+    SortedIndex = lists:sort(
+        fun ({Word1, _}, {Word2, _}) ->
+           Word1 =< Word2
+        end,
+        MappedIndex
+    ),
+    SortedIndex.
+
+to_interval_list(LineSet) ->
+    SortedList = lists:sort(gb_sets:to_list(LineSet)),
+    case SortedList of
+        [] -> [];
+        [X | _] -> to_interval_listTr(SortedList, X, [], [])
+    end.
+
+to_interval_listTr([], _, CurrentInterval, Accum) ->
+    Interval = to_interval(lists:reverse(CurrentInterval)),
+    lists:reverse([Interval| Accum]);
+to_interval_listTr([X | Xs], Cursor, CurrentInterval, Accum) ->
+    case Cursor == X of
+        true -> to_interval_listTr(Xs, Cursor + 1, [X | CurrentInterval], Accum);
+        _ ->
+            Interval = to_interval(lists:reverse(CurrentInterval)),
+            to_interval_listTr([X | Xs], X, [], [Interval| Accum])
+    end.
+
+to_interval([]) ->
+    {};
+to_interval([X]) ->
+    {X, X};
+to_interval([X | Xs]) ->
+    {X, lists:last(Xs)}.
+
+scan_lines(Lines) ->
+    scan_linesTr(Lines, #{}).
+
+scan_linesTr([], Accum) ->
+    Accum;
+scan_linesTr([Line | Lines], Accum) ->
+    AccumAfterLineParse = scan_line(Line, Accum),
+    scan_linesTr(Lines, AccumAfterLineParse).
 
 scan_line({Index, Words}, Accum) when Index > 0 ->
     scan_lineTr(Words, Index, Accum).

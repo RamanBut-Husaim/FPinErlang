@@ -12,6 +12,10 @@
 
 -import(index, [
     split_string_into_words/1,
+    process_strings/1,
+    to_interval_list/1,
+    to_interval/1,
+    scan_lines/1,
     scan_line/2,
     transform_strings/1,
     sanitize_words/1,
@@ -106,5 +110,84 @@ scan_line_WhenThereAreNoWordsInTheLine_ShouldNotModifyAccumulator_test() ->
         "some" => gb_sets:add(1, gb_sets:new())
     },
     ?assertEqual(Expected, scan_line(Data, Accum)).
+
+scan_lines_WhenThereAreNotLines_ShouldReturnEmptyMap_test() ->
+    Expected = #{},
+    ?assertEqual(Expected, scan_lines([])).
+
+scan_lines_WhenTheLinesArePassed_ShouldReturnCorrectMap_test() ->
+    Data = [
+        {1, ["that", "some", "that"]},
+        {4, ["go", "some", "that"]},
+        {5, ["go", "forever"]}
+    ],
+    Expected = #{
+        "that" => gb_sets:add(4, gb_sets:add(1, gb_sets:new())),
+        "some" => gb_sets:add(4, gb_sets:add(1, gb_sets:new())),
+        "go" => gb_sets:add(5, gb_sets:add(4, gb_sets:new())),
+        "forever" => gb_sets:add(5, gb_sets:new())
+    },
+    ?assertEqual(Expected, scan_lines(Data)).
+
+to_interval_WhenTheListIsEmpty_ShouldReturnEmptyTuple_test() ->
+    Expected = {},
+    ?assertEqual(Expected, to_interval([])).
+
+to_interval_WhenTheListWithEmptyElementIsPassed_ShouldReturnTupleWithSameElement_test() ->
+    Data = [3],
+    Expected = {3, 3},
+    ?assertEqual(Expected, to_interval(Data)).
+
+to_interval_WhenListWithSeveralElementsIsPassed_ShouldReturnTupleWithFirstAndLastElement_test() ->
+    Data = [8, 1, 22, 12, 4],
+    Expected = {8, 4},
+    ?assertEqual(Expected, to_interval(Data)).
+
+to_interval_list_WhenTheSetIsEmpty_ShouldReturnEmptyList_test() ->
+    Expected = [],
+    ?assertEqual(Expected, to_interval_list(gb_sets:new())).
+
+to_interval_list_WhenTheSetContainsOneElement_ShouldReturnListWithOneTuple_test() ->
+    Data = gb_sets:from_list([3]),
+    Expected = [{3, 3}],
+    ?assertEqual(Expected, to_interval_list(Data)).
+
+to_interval_list_WhenThereAreConsequentElements_ShouldReturnCorrectResult_test() ->
+    Data = gb_sets:from_list([2, 1, 3, 5, 8]),
+    Expected = [{1, 3}, {5, 5}, {8, 8}],
+    ?assertEqual(Expected, to_interval_list(Data)).
+
+to_interval_list_WhenThereAreSeveralGroupsWithConsequentElements_ShouldReturnCorrectResult_test() ->
+    Data = gb_sets:from_list([1, 3, 2, 4, 6, 8, 10, 9, 33, 34, 11, 35]),
+    Expected = [{1, 4}, {6, 6}, {8, 11}, {33, 35}],
+    ?assertEqual(Expected, to_interval_list(Data)).
+
+to_interval_list_WhenThereAreNoConsequentIntervals_ShouldReturnCorrectResult_test() ->
+    Data = gb_sets:from_list([3, 5, 12, 1, 88, 9122]),
+    Expected = [{1, 1}, {3, 3}, {5, 5}, {12, 12}, {88, 88}, {9122, 9122}],
+    ?assertEqual(Expected, to_interval_list(Data)).
+
+process_strings_WhenThereAreNoStrings_ShouldReturnEmptyList_test() ->
+    Expected = [],
+    ?assertEqual(Expected, process_strings([])).
+
+process_strings_WhenThereAreStrings_ShouldProcessThemCorrectly_test() ->
+    Data = [
+        "for greater good",      %1
+        "fire and wisdom",       %2
+        "honor, greater, fire",  %3
+        "sorrow night good"      %4
+    ],
+    Expected = [
+        { "fire", [{2, 3} ]},
+        { "good", [{1, 1}, {4, 4}] },
+        { "greater", [{1, 1}, {3, 3}] },
+        { "honor", [{3, 3}] },
+        { "night", [{4, 4}] },
+        { "sorrow", [{4, 4}] },
+        { "wisdom", [{2, 2}] }
+    ],
+    ?assertEqual(Expected, process_strings(Data)).
+
 
 
