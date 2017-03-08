@@ -12,6 +12,7 @@
 
 -import(index, [
     split_string_into_words/1,
+    scan_line/2,
     transform_strings/1,
     sanitize_words/1,
     to_lower_words/1,
@@ -73,5 +74,37 @@ transform_strings_WhenTheListContainsValues_ShouldTransformCorrectly_test() ->
         {2, ["that", "nation", "or", "nation", "so", "conceived", "dedicated"]}
     ],
     ?assertEqual(Expected, transform_strings(Data)).
+
+scan_line_WhenTheLineContainsDuplicateWords_ShouldReturnCorrectResult_test() ->
+    Data = {1, ["that", "some", "that"]},
+    Expected = #{
+        "that" => gb_sets:add(1, gb_sets:new()),
+        "some" => gb_sets:add(1, gb_sets:new())
+    },
+    ?assertEqual(Expected, scan_line(Data, #{})).
+
+scan_line_WhenTheLineContainsWordsThatHasAlreadyBeenAdded_ShouldAddLineCorrectly_test() ->
+    Data = {4, ["that"]},
+    Accum = #{
+        "that" => gb_sets:add(1, gb_sets:new()),
+        "some" => gb_sets:add(1, gb_sets:new())
+    },
+    Expected = #{
+        "that" => gb_sets:add(4, gb_sets:add(1, gb_sets:new())),
+        "some" => gb_sets:add(1, gb_sets:new())
+    },
+    ?assertEqual(Expected, scan_line(Data, Accum)).
+
+scan_line_WhenThereAreNoWordsInTheLine_ShouldNotModifyAccumulator_test() ->
+    Data = {4, []},
+    Accum = #{
+        "that" => gb_sets:add(1, gb_sets:new()),
+        "some" => gb_sets:add(1, gb_sets:new())
+    },
+    Expected = #{
+        "that" => gb_sets:add(1, gb_sets:new()),
+        "some" => gb_sets:add(1, gb_sets:new())
+    },
+    ?assertEqual(Expected, scan_line(Data, Accum)).
 
 

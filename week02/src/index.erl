@@ -12,6 +12,7 @@
 -export([
     get_file_contents/1,
     show_file_contents/1,
+    scan_line/2,
     transform_strings/1,
     split_string_into_words/1,
     sanitize_words/1,
@@ -52,6 +53,16 @@ show_file_contents([L|Ls]) ->
     show_file_contents(Ls);
 show_file_contents([]) ->
     ok.
+
+scan_line({Index, Words}, Accum) when Index > 0 ->
+    scan_lineTr(Words, Index, Accum).
+
+scan_lineTr([], _, Accum) ->
+    Accum;
+scan_lineTr([X | Xs], Index, Accum) ->
+    LineSet = maps:get(X, Accum, gb_sets:new()),
+    LineSetWithIndex = gb_sets:add(Index, LineSet),
+    scan_lineTr(Xs, Index, maps:put(X, LineSetWithIndex, Accum)).
 
 transform_strings(X) ->
     transform_stringsTr(X, 1, []).
