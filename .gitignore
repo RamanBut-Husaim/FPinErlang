@@ -30,6 +30,7 @@
 # IntelliJ
 week01/out/
 week02/out/
+week03/out/
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
